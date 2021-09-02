@@ -1,4 +1,4 @@
-const {Genre, validate} = require('..models/genre')
+const {Genre, validate} = require('../models/genre')
 // Genre = genre.Genre
 // validate = genre.validateGenre
 const mongoose = require('mongoose')
