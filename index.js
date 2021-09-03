@@ -1,3 +1,7 @@
+require('express-async-errors');
+const winston = require('winston');
+require('winston-mongodb');
+const errors = require('./middleware/error');
 const config = require('config');
 const genres = require('./routes/genres');
 const customers = require('./routes/customers');
@@ -10,6 +14,36 @@ const app = express();
 const mongoose = require('mongoose');
 const Joi = require('Joi');
 Joi.objectId = require('joi-objectid')(Joi);
+
+/* process.on('uncaughtException', (ex) => {
+    console.log('GOT AN UNCAUGHT EXCEPTION.');
+    winston.error(ex.message, ex);
+    process.exit(1); // 1 -> Failure
+});
+ */
+
+winston.handleExceptions(
+    new winston.transports.File( {filename:'uncaughtExceptions.log'})
+);
+
+process.on('unhandledRejection', (ex) => {
+   throw ex;
+});
+
+/* process.on('unhandledRejection', (ex) => {
+    console.log('GOT AN UNHANDLED REJECTION.');
+    winston.error(ex.message, ex);
+    process.exit(1); // 1 -> Failure
+
+});
+ */
+
+
+winston.add(winston.transports.File, { filename: 'logfile.log' });
+winston.add(winston.transports.MongoDB, {
+     db:'mongodb://localhost/vidly',
+     level: 'error'
+    });
 
 if(!config.get('jwtPrivateKey')){
     console.error("FATAL ERROR: jwtPrivateKey is not defined.");
@@ -27,6 +61,8 @@ app.use('/api/movies', movies);
 app.use('/api/rentals', rentals);
 app.use('/api/users', users);
 app.use('/api/auth', auth);
+
+app.use(errors);
 
 const port = process.env.PORT || 3000;
 app.listen(port, () => console.log(`Listening on port ${port}...`));
